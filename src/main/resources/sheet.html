@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+<script src="ws-client.js"></script>
+<script src="sheet.js"></script>
+
+</head>
+
+<body>
+
+	<div>
+		<span id='editing'>&nbsp;</span> 
+		<input type='text' id='editor'></input>
+	</div>
+
+	<div id='sheet'>
+		<table border='1'>
+			<colgroup>
+				<col id='COL1' style="width:20px;background-color: gray">
+				<col id='COL2' style="width:200px;background-color: yellow">
+			</colgroup>
+			<thead>
+				<tr>
+					<th>&nbsp;</th>
+					<th id='A'>A</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr id='1'>
+					<th>1</th>
+					<td id='A1'>A1</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/3</td>
+				</tr>
+				<tr id='3'>
+					<th>3</th>
+					<td id='A3'>A1</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/4</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/5</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/6</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/7</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/8</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/9</td>
+				</tr>
+				<tr id='2'>
+					<th>2</th>
+					<td id='A2'>=A3/10</td>
+				</tr>
+			<tfoot>
+			</tfoot>
+		</table>
+	</div>
+
+	<script>
+		var tds = document.querySelectorAll("#sheet td");
+		var editorText = document.querySelector("#editor");
+		var editorCellId = document.querySelector("#editing");
+		for (var i = 0; i < tds.length; i++) {
+			var cell = tds[i];
+			cell.onclick = function(e) {
+				var editableValue = this.dataset.func || this.textContent;
+				editorText.value = editableValue;
+				editorCellId.textContent = this.id;
+				editorText.dataset.target = this.id;
+			}.bind(cell);
+			if (cell.textContent[0] === '=') {
+				cell.dataset.func = cell.textContent.substr(1);
+				var parent = document.querySelector("#A3") ;
+				addDependency( parent, cell ) ;
+			}
+		}
+
+		var dag = {};
+	</script>
+</body>
+
+</html>
