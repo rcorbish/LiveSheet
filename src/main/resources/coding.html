@@ -33,7 +33,7 @@
 			y : 100,
 			height: 30,
 			effectiveHeight: 30,
-			width: 200,
+			width: 250,
 			following: [],
 			parent: null
 		},
@@ -44,7 +44,18 @@
 			y : 300,
 			height: 50,
 			effectiveHeight: 50,
-			width: 200,
+			width: 250,
+			following: [],
+			parent: null
+		},
+		{
+			name : 'ZZZ',
+			type : 'block',
+			x : 100,
+			y : 400,
+			height: 75,
+			effectiveHeight: 75,
+			width: 250,
 			following: [],
 			parent: null
 		}];
@@ -61,6 +72,12 @@
 							break ;
 						}
 					}
+					var ultimateParent = draggedSprite ;
+					while( ultimateParent.parent ) {
+						ultimateParent = ultimateParent.parent ;
+					}
+					calcHeight( ultimateParent ) ;
+
 					draggedSprite.parent = null ;
 				}
 				spriteOffsetX = draggedSprite.x - mp.x ;
@@ -110,12 +127,12 @@
 			}
 		}
 
-		function calcHeight( codeBlock ) {
-			var newHeight = codeBlock.height ;
+		function calcHeight( codeBlock ) {			
+			codeBlock.effectiveHeight = codeBlock.height ;
 			for( var i=0 ; i<codeBlock.following.length ; i++ ) {
-				newHeight += calcHeight( codeBlock.following[i] ) ;
+				codeBlock.effectiveHeight += calcHeight( codeBlock.following[i] ) ;
 			}
-			return newHeight ;
+			return codeBlock.effectiveHeight ;
 		}
 		
 		function testJoin( codeBlock ) {
@@ -134,7 +151,12 @@
 		function joinBlocks( below, above ) {
 			below.parent = above ;
 			above.following.push( below ) ;
-			above.effectiveHeight = calcHeight( above ) ;
+
+			var ultimateParent = above ;
+			while( ultimateParent.parent ) {
+				ultimateParent = ultimateParent.parent ;
+			}
+			calcHeight( ultimateParent ) ;
 		}
 		
 		function spriteAt(x,y) {
