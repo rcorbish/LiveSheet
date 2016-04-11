@@ -29,7 +29,9 @@ function WebSocketClient( path, cb ) {
 
 		// called when socket connection closed
 		ws.onclose = function() {
-			intervalTimer = setInterval(resetWebSocket, 5000);
+			if( !intervalTimer ) {
+				intervalTimer = setInterval(resetWebSocket, 5000);
+			}
 		};
 
 		// called in case of an error

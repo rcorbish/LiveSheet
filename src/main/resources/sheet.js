@@ -2,13 +2,16 @@
 
 var ws = new WebSocketClient( "live-data", function(d) { 
 		for( var cellName in d ) {
-			update( document.getElementById( cellName ), d[cellName] ) ;
+			var tgt =  document.getElementById( cellName ) ;
+			if( tgt ) {
+				updateCellValue( tgt, d[cellName] ) ;
+			}
 		}
 	}) ;
 
 var dependencies = {} ;
 
-function update( elem, val ) {
+function updateCellValue( elem, val ) {
 	
 	elem.textContent = val ;
 	var dep = dependencies[elem.id] ;
@@ -16,7 +19,22 @@ function update( elem, val ) {
 		for( var i=0 ; i<dep.length ; i++ ) {
 			var f = dep[i].dataset.func ;
 			// need to fix this ....
-			update( dep[i], eval(f.replace(elem.id, val) ) ) ;
+			var re = /([A-Z]+[0-9]+)(?![\\s]*[\\(]+)/g ;
+			var m = re.exec( f ) ;
+			var cellIds = [] ;
+			while( m ) {
+				cellIds.push( m[0] ) ;
+				m = re.exec( f ) ;
+			}
+			f = f.replace( 'math.', 'Math.' ) ;
+			for( var j=0 ; j<cellIds.length ; j++ ) {
+				f = f.replace( cellIds[j] , "document.querySelector('#" + cellIds[j] + "').textContent" ) ;
+			}
+			try {
+				updateCellValue( dep[i], eval(f) ) ;
+			} catch( e ) {
+				updateCellValue( dep[i], "#ERROR" ) ;
+			}
 		}
 	}
 }

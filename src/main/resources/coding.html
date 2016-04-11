@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+
+</head>
+
+<body>
+
+	<div>
+
+		<div id='toolkit'>
+			<canvas width='100' height='600'> </canvas>
+		</div>
+
+		<div id='code'>
+			<canvas width='600' height='600' style='background:silver;'></canvas>
+		</div>
+
+	</div>
+
+	<script>
+		var canvas = document.querySelector("#code canvas");
+	    var canvasWidth=canvas.width;
+	    var canvasHeight=canvas.height;
+		var draggedSprite = null ;
+		var spriteOffsetX ;
+		var spriteOffsetY ;
+		var imageData = null ;
+		var codeBlocks = [ {
+			name : 'XXX',
+			type : 'block',			
+			x : 100,
+			y : 100,
+			height: 30,
+			effectiveHeight: 30,
+			width: 200,
+			following: [],
+			parent: null
+		},
+		{
+			name : 'YYY',
+			type : 'block',
+			x : 200,
+			y : 300,
+			height: 50,
+			effectiveHeight: 50,
+			width: 200,
+			following: [],
+			parent: null
+		}];
+
+		function handleMouseDown(e) {
+			var mp = getMousePos( canvas,e ) ;
+			// set the drag flag
+			draggedSprite = spriteAt( mp.x, mp.y ) ;
+			if( draggedSprite ) {
+				if( draggedSprite.parent ) {
+					for( var i=0 ; i<draggedSprite.parent.following.length ; i++ ) {
+						if( draggedSprite === draggedSprite.parent.following[i] ) {
+							draggedSprite.parent.following.splice( i,1 ) ;
+							break ;
+						}
+					}
+					draggedSprite.parent = null ;
+				}
+				spriteOffsetX = draggedSprite.x - mp.x ;
+				spriteOffsetY = draggedSprite.y - mp.y ;
+				ctx.clearRect(draggedSprite.x, draggedSprite.y, draggedSprite.width, draggedSprite.effectiveHeight ) ;				
+
+				imgData = null ;
+				handleMouseMove(e) ;
+			}
+		}
+
+		function handleMouseUp(e) {
+			var mp = getMousePos( canvas,e ) ;
+			// clear the drag flag
+			if( draggedSprite ) {
+				draggedSprite.x = mp.x + spriteOffsetX ;
+				draggedSprite.y = mp.y + spriteOffsetY  ;
+				testJoin( draggedSprite ) ;
+				draggedSprite = null ;
+				imgData = null ;
+				redrawAll() ;
+			}
+		}
+
+		
+		function handleMouseOut(e) {
+			// user has left the canvas, so clear the drag flag
+			//isDragging=false;
+		}
+
+		function handleMouseMove(e) {
+			var mp = getMousePos( canvas,e ) ;
+			//console.log( mp.x, ",", mp.y ) ;
+			// if the drag flag is set, clear the canvas and draw the image
+			if (draggedSprite) {
+				if( imgData ) {
+					ctx.putImageData(imgData, draggedSprite.x, draggedSprite.y ) ;	
+				}
+				
+				draggedSprite.x = mp.x + spriteOffsetX ;
+				draggedSprite.y = mp.y + spriteOffsetY  ;
+				
+				imgData=ctx.getImageData(draggedSprite.x, draggedSprite.y, draggedSprite.width, draggedSprite.effectiveHeight ) ;				
+				
+				drawBlock( draggedSprite );
+
+			}
+		}
+
+		function calcHeight( codeBlock ) {
+			var newHeight = codeBlock.height ;
+			for( var i=0 ; i<codeBlock.following.length ; i++ ) {
+				newHeight += calcHeight( codeBlock.following[i] ) ;
+			}
+			return newHeight ;
+		}
+		
+		function testJoin( codeBlock ) {
+			for (var i = 0; i < codeBlocks.length; i++) {
+				var testCodeBlock = codeBlocks[i];
+//				console.log( "dx", Math.abs(codeBlock.x-testCodeBlock.x) ) ;
+//				console.log( "dy", Math.abs(codeBlock.y-testCodeBlock.y) ) ;
+				if( Math.abs(codeBlock.x-testCodeBlock.x) < 5 && 
+					Math.abs(codeBlock.y-(testCodeBlock.y+testCodeBlock.height - 7) ) < 5  ) {
+					joinBlocks( codeBlock, testCodeBlock ) ;
+					break ;
+				} 
+			}
+		}
+		
+		function joinBlocks( below, above ) {
+			below.parent = above ;
+			above.following.push( below ) ;
+			above.effectiveHeight = calcHeight( above ) ;
+		}
+		
+		function spriteAt(x,y) {
+			var rc = null ;
+			for (var i = 0; i < codeBlocks.length; i++) {
+				var codeBlock = codeBlocks[i];
+				
+				if( x>codeBlock.x && x<codeBlock.x+codeBlock.width && y>codeBlock.y && y<codeBlock.y+codeBlock.height ) {
+					rc = codeBlock ;
+					break ;
+				}
+			}
+			return rc ;
+		}
+		
+		function getMousePos(canvas, evt) {
+		    var rect = canvas.getBoundingClientRect();
+		    return {
+		      x: evt.clientX - rect.left,
+		      y: evt.clientY - rect.top
+		    };
+		}
+		
+		function drawBlock( codeBlock ) {
+			//ctx.fillRect(codeBlock.x, codeBlock.y, 100, 100);
+			var poly=[ 2,7, 
+			           2,codeBlock.height-2, 
+			           20,codeBlock.height-2, 
+			           20,codeBlock.height-7, 
+			           30,codeBlock.height-7, 
+			           30,codeBlock.height-2,
+			           codeBlock.width-2,codeBlock.height-2,
+			           codeBlock.width-2,7,
+			           30,7, 
+			           30,2, 
+			           20,2, 
+			           20,7 ];
+
+			ctx.fillStyle = '#f00';
+			
+			ctx.beginPath();
+			ctx.moveTo(poly[0]+codeBlock.x, poly[1]+codeBlock.y);
+			for( var item=2 ; item < poly.length-1 ; item+=2 ){
+				ctx.lineTo( poly[item]+codeBlock.x , poly[item+1]+codeBlock.y ) ;
+			}
+		
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke() ;
+			for( var i=0 ; i<codeBlock.following.length ; i++ ) {
+				var cb = codeBlock.following[i] ;
+				cb.x = codeBlock.x ;
+				cb.y = codeBlock.y+codeBlock.height-7 ;
+				drawBlock( cb ) ; 
+			}	
+		}
+		
+		canvas.onmousedown = function(e) {
+			handleMouseDown(e);
+		};
+		canvas.onmousemove = function(e) {
+			handleMouseMove(e);
+		};
+		canvas.onmouseup = function(e) {
+			handleMouseUp(e);
+		};
+		canvas.onmouseout = function(e) {
+			handleMouseOut(e);
+		};
+
+		var ctx = canvas.getContext("2d");
+		
+		function redrawAll() {
+			canvas.width = canvas.width;	// clear screen
+
+			for (var i = 0; i < codeBlocks.length; i++) {
+				var codeBlock = codeBlocks[i];
+				if( !codeBlock.parent ) {
+					drawBlock( codeBlock );
+				}
+			}
+		}
+		
+		redrawAll() ;
+	</script>
+</body>
+
+</html>

@@ -9,15 +9,14 @@
 <body>
 
 	<div>
-		<span id='editing'>&nbsp;</span> 
-		<input type='text' id='editor'></input>
+		<span id='editing'>&nbsp;</span> <input type='text' id='editor'></input>
 	</div>
 
 	<div id='sheet'>
 		<table border='1'>
 			<colgroup>
-				<col id='COL1' style="width:20px;background-color: gray">
-				<col id='COL2' style="width:200px;background-color: yellow">
+				<col id='COL1' style="width: 20px; background-color: gray">
+				<col id='COL2' style="width: 200px; background-color: yellow">
 			</colgroup>
 			<thead>
 				<tr>
@@ -71,26 +70,125 @@
 		</table>
 	</div>
 
+	<div></div>
+
 	<script>
-		var tds = document.querySelectorAll("#sheet td");
-		var editorText = document.querySelector("#editor");
-		var editorCellId = document.querySelector("#editing");
-		for (var i = 0; i < tds.length; i++) {
-			var cell = tds[i];
-			cell.onclick = function(e) {
-				var editableValue = this.dataset.func || this.textContent;
-				editorText.value = editableValue;
-				editorCellId.textContent = this.id;
-				editorText.dataset.target = this.id;
-			}.bind(cell);
-			if (cell.textContent[0] === '=') {
-				cell.dataset.func = cell.textContent.substr(1);
-				var parent = document.querySelector("#A3") ;
-				addDependency( parent, cell ) ;
+		// Setup drag & drop onto the whole doc ....
+		var doc = document.documentElement;
+		doc.ondragover = function() {
+			this.className = 'hover';
+			return false;
+		};
+		doc.ondragend = function() {
+			this.className = '';
+			return false;
+		};
+		doc.ondrop = function(event) {
+			event.preventDefault && event.preventDefault();
+			this.className = '';
+			var files = event.dataTransfer.files; // now do something with the file(s)
+
+			var formData = new FormData();
+			for (var i = 0; i < files.length; i++) {
+				formData.append('file', files[i]);
+			}
+
+			// now post a new XHR request
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', '/upload');
+			xhr.onload = function() {
+				if (xhr.status === 200) {
+					var dag = JSON.parse(this.responseText);
+					resetSheet(dag);
+				} else {
+					console.log('Aaaagggghhhh ...' + xhr.status);
+				}
+			};
+
+			xhr.send(formData);
+			return false;
+		};
+
+		function parseSheet() {
+			dependencies = {} ;
+
+			var tds = document.querySelectorAll("#sheet td");
+			var editorText = document.querySelector("#editor");
+			var editorCellId = document.querySelector("#editing");
+			for (var i = 0; i < tds.length; i++) {
+				var cell = tds[i];
+				cell.onclick = function(e) {
+					var editableValue = this.dataset.func || this.textContent;
+					editorText.value = editableValue;
+					editorCellId.textContent = this.id;
+					editorText.dataset.target = this.id;
+				}.bind(cell);
+				if (cell.textContent[0] === '=') {
+					cell.dataset.func = cell.textContent.substr(1);
+				}
 			}
 		}
+		
+		
+		function resetSheet(data) {
+			dependencies = {} ;
+			dag = data;
+			var sheet = document.querySelector("#sheet");
+			while (sheet.hasChildNodes()) {
+				sheet.removeChild(sheet.lastChild);
+			}
+			
+			var table = document.createElement("TABLE");
+			document.getElementById("sheet").appendChild(table);
+			
+			var tds = document.querySelectorAll("#sheet td");
+			var editorText = document.querySelector("#editor");
+			var editorCellId = document.querySelector("#editing");
 
+			for (var r = 0; r <= data.rows; r++) {
+				var row = table.insertRow(-1);
+				for (var c = 0; c <= data.cols; c++) {
+					var cell = row.insertCell(-1);
+					
+					cell.onclick = function(e) {
+						var editableValue = this.dataset.func || this.textContent;
+						editorText.value = editableValue;
+						editorCellId.textContent = this.id;
+						editorText.dataset.target = this.id;
+					}.bind(cell);
+
+					var cellAddress = String
+							.fromCharCode('A'.charCodeAt(0) + c)
+							+ (r + 1);
+					var cellContent = data.content[cellAddress];
+					if (cellContent) {
+						cell.innerHTML = cellContent;
+						if( cellContent[0]==='=' ) {
+							cell.dataset.func = cellContent.substr(1);
+						}
+					}
+
+					cell.id = cellAddress;
+
+				}
+			}
+			
+			for (var r = 0; r <= data.rows; r++) {
+				var row = table.insertRow(-1);
+				for (var c = 0; c <= data.cols; c++) {
+					var cellAddress = String.fromCharCode('A'.charCodeAt(0) + c) + (r + 1);
+					var cell = document.querySelector('#' + cellAddress) ;
+					var deps = data.dependencies[ cellAddress ] ;
+					if( deps ) {
+						for( var i=0 ; i<deps.length ; i++ ) {
+							addDependency( cell, document.querySelector('#' + deps[i]) ) ;
+						}
+					}
+				}
+			}
+		}
 		var dag = {};
+		parseSheet() ;
 	</script>
 </body>
 

@@ -3,6 +3,8 @@ package com.rc.ls;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.MultipartConfigElement;
+
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -43,7 +45,7 @@ public class WebServer {
 
 		// Contexts define what URLs go to which handler
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
-		contexts.setHandlers(new Handler[] { getSheetHandler(), getSheetDataHandler() } );
+		contexts.setHandlers(new Handler[] { getSheetHandler(), getSheetDataHandler(), getUploadHandler(), getCodingHandler() } );
 
 		// If suitable request headers are present - we can compress the output
 		GzipHandler gzipHandler = new GzipHandler();
@@ -67,6 +69,22 @@ public class WebServer {
 		ContextHandler context = new ContextHandler("/");
 		context.setContextPath("/");
 		context.setHandler( new SheetHandler() ) ;        
+		return context  ;
+	}
+
+	private Handler getUploadHandler() {
+		ContextHandler context = new ContextHandler("/upload");
+		context.setContextPath("/upload");
+		context.setAllowNullPathInfo(true);
+		context.setHandler( new UploadHandler() ) ;        
+		return context  ;
+	}
+
+	private Handler getCodingHandler() {
+		ContextHandler context = new ContextHandler("/coding");
+		context.setContextPath("/coding");
+		context.setAllowNullPathInfo(true);
+		context.setHandler( new CodingHandler() ) ;        
 		return context  ;
 	}
 
