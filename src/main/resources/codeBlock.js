@@ -79,22 +79,21 @@ function CodeBlock( args ) {
 		ultimateParent.calcHeight();
 	}
 
-
 	this.draw = function ( ctx ) {
 		var poly;
 		if (this.type === 'event') {
-			poly = [ 2, 7, 2, this.height - 2, 20,
-			         this.height - 2, 20, this.height - 7, 30,
-			         this.height - 7, 30, this.height - 2,
-			         this.width - 2, this.height - 2,
-			         this.width - 2, 7, 20, 7 ];
+			poly = [ 7, 7, 7, this.height - 17, 2, this.height - 17, 2, this.height - 7, 7, this.height - 7,   7, this.height - 2,			// lhs 
+			         20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2, // bottom + bump in
+			         this.width - 2, 7					// rhs 
+			         	// top 
+			         ];
 
 		} else {
-			poly = [ 2, 7, 2, this.height - 2, 20,
-			         this.height - 2, 20, this.height - 7, 30,
-			         this.height - 7, 30, this.height - 2,
-			         this.width - 2, this.height - 2,
-			         this.width - 2, 7, 30, 7, 30, 2, 20, 2, 20, 7 ];
+			poly = [ 7, 7, 7, this.height - 2, 			// lhs
+			         20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2,
+			         this.width - 2, this.height - 7, this.width - 7, this.height - 7,this.width - 7, this.height - 17 , this.width - 2, this.height - 17,this.width - 2, 7, 
+			         30, 7, 30, 2, 20, 2, 20, 7			// top + bump out 
+			         ];		
 		}
 		ctx.fillStyle = this.type === 'block' ? '#f00' : '#0f0';
 

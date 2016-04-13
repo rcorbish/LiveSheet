@@ -2,65 +2,55 @@
 <html lang="en">
 <head>
 <script src='codeBlock.js'></script>
+<script src='contextmenu.js'></script>
 
 <style>
 .tasks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+	list-style: none;
+	margin: 0;
+	padding: 0;
 }
 
 .task {
-  xdisplay: flex;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: solid 1px #dfdfdf;
+	xdisplay: flex;
+	justify-content: space-between;
+	padding: 12px 0;
+	border-bottom: solid 1px #dfdfdf;
 }
 
 .task:last-child {
-  border-bottom: none;
+	border-bottom: none;
 }
 
 .context-menu {
-  display: none;
-  position: absolute;
-  z-index: 10;
-  padding: 12px 0;
-  width: 240px;
-  background-color: #fff;
-  border: solid 1px #dfdfdf;
-  box-shadow: 1px 1px 2px #cfcfcf;
-}
-
-.context-menu--active {
-  display: block;
+	display: block;
+	position: absolute;
+	z-index: 10;
+	padding: 12px 0;
+	width: 240px;
+	background-color: #fff;
+	border: solid 1px #dfdfdf;
+	box-shadow: 1px 1px 2px #cfcfcf;
 }
 
 .context-menu__items {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+	list-style: none;
+	margin: 0;
+	padding: 0;
 }
 
 .context-menu__item {
-  display: block;
-  margin-bottom: 4px;
+	display: block;
+	margin-bottom: 4px;
 }
 
 .context-menu__item:last-child {
-  margin-bottom: 0;
+	margin-bottom: 0;
 }
 
-.context-menu__link {
-  display: block;
-  padding: 4px 12px;
-  color: #0066aa;
-  text-decoration: none;
-}
-
-.context-menu__link:hover {
-  color: #fff;
-  background-color: #0066aa;
+.context-menu__item:hover {
+	color: #fff;
+	background-color: #0066aa;
 }
 </style>
 </head>
@@ -71,7 +61,7 @@
 		<div id='toolkit'>
 			<canvas width='100' height='600'> </canvas>
 		</div>
-		<div id='code' class="task" >
+		<div id='code' class="task">
 			<canvas width='600' height='600' style='background:silver;'></canvas>
 		</div>
 	</div>
@@ -80,12 +70,12 @@
 		var canvas = document.querySelector("#code canvas");
 		var canvasWidth = canvas.width;
 		var canvasHeight = canvas.height;
-		
+
 		var draggedSprite = null;
 		var spriteOffsetX;
 		var spriteOffsetY;
 		var imageData = null;
-		
+
 		var codeBlockData = [ {
 			name : 'XXX',
 			type : 'block',
@@ -128,14 +118,13 @@
 			parent : null
 		} ];
 
-		var codeBlocks = new CodeBlocks() ;
-		for( var i=0 ; i<codeBlockData.length ; i++ ) {
-			codeBlocks.add( new CodeBlock( codeBlockData[i] ) ) ;
+		var codeBlocks = new CodeBlocks();
+		for (var i = 0; i < codeBlockData.length; i++) {
+			codeBlocks.add(new CodeBlock(codeBlockData[i]));
 		}
-		
-		
+
 		function handleMouseDown(e) {
-			if( e.button === 0 ) {
+			if (e.button === 0) {
 				var mp = getMousePos(canvas, e);
 				// set the drag flag
 				draggedSprite = codeBlocks.codeBlockAt(mp.x, mp.y);
@@ -152,14 +141,14 @@
 							ultimateParent = ultimateParent.parent;
 						}
 						ultimateParent.calcHeight();
-	
+
 						draggedSprite.parent = null;
 					}
 					spriteOffsetX = draggedSprite.x - mp.x;
 					spriteOffsetY = draggedSprite.y - mp.y;
 					ctx.clearRect(draggedSprite.x, draggedSprite.y,
 							draggedSprite.width, draggedSprite.effectiveHeight);
-	
+
 					imgData = null;
 					handleMouseMove(e);
 				}
@@ -167,14 +156,16 @@
 		}
 
 		function handleMouseUp(e) {
-			if (draggedSprite) {
-				var mp = getMousePos(canvas, e);
-				draggedSprite.x = mp.x + spriteOffsetX;
-				draggedSprite.y = mp.y + spriteOffsetY;
-				codeBlocks.testJoin(draggedSprite);
-				draggedSprite = null;
-				imgData = null;
-				redrawAll();
+			if (e.button === 0) {
+				if (draggedSprite) {
+					var mp = getMousePos(canvas, e);
+					draggedSprite.x = mp.x + spriteOffsetX;
+					draggedSprite.y = mp.y + spriteOffsetY;
+					codeBlocks.testJoin(draggedSprite);
+					draggedSprite = null;
+					imgData = null;
+					redrawAll();
+				}
 			}
 		}
 
@@ -187,7 +178,7 @@
 			var mp = getMousePos(canvas, e);
 			//console.log( mp.x, ",", mp.y ) ;
 			// if the drag flag is set, clear the canvas and draw the image
-			if (draggedSprite) {
+			if (draggedSprite && e.button === 0) {
 				if (imgData) {
 					ctx.putImageData(imgData, draggedSprite.x, draggedSprite.y);
 				}
@@ -198,11 +189,10 @@
 				imgData = ctx.getImageData(draggedSprite.x, draggedSprite.y,
 						draggedSprite.width, draggedSprite.effectiveHeight);
 
-				draggedSprite.draw( ctx ) ;
+				draggedSprite.draw(ctx);
 
 			}
 		}
-
 
 		function getMousePos(canvas, evt) {
 			var rect = canvas.getBoundingClientRect();
@@ -212,9 +202,11 @@
 			};
 		}
 
-
 		canvas.onmousedown = function(e) {
 			handleMouseDown(e);
+		};
+		canvas.oncontextmenu = function(e) {
+			handleContextMenu(e);
 		};
 		canvas.onmousemove = function(e) {
 			handleMouseMove(e);
@@ -230,30 +222,12 @@
 
 		function redrawAll() {
 			canvas.width = canvas.width; // clear screen
-			codeBlocks.draw( ctx ) ;			
+			codeBlocks.draw(ctx);
 		}
 
 		redrawAll();
-		
 	</script>
 
-
- <nav id="context-menu" class="context-menu">
-    <ul class="context-menu__items">
-      <li class="context-menu__item">
-        <a href="#" class="context-menu__link" data-action="View"><i class="fa fa-eye"></i> View Task</a>
-      </li>
-      <li class="context-menu__item">
-        <a href="#" class="context-menu__link" data-action="Edit"><i class="fa fa-edit"></i> Edit Task</a>
-      </li>
-      <li class="context-menu__item">
-        <a href="#" class="context-menu__link" data-action="Delete"><i class="fa fa-times"></i> Delete Task</a>
-      </li>
-    </ul>
-  </nav>
-
-<script src='contextmenu.js'></script>
-  
 </body>
 
 </html>

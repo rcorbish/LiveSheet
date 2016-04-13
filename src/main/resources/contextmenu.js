@@ -1,197 +1,51 @@
 
-var contextMenuClassName = "context-menu";
-var contextMenuItemClassName = "context-menu__item";
-var contextMenuLinkClassName = "context-menu__link";
-var contextMenuActive = "context-menu--active";
+var contextCodeBlock = null ;
 
-var taskItemClassName = "task";
-var taskItemInContext;
+function handleContextMenu(e) {
 
-var clickCoords;
-var clickCoordsX;
-var clickCoordsY;
+	var mp = getMousePos(canvas, e);
 
-var menu = document.querySelector("#context-menu");
-var menuItems = menu.querySelectorAll(".context-menu__item");
-var menuState = 0;
-var menuWidth;
-var menuHeight;
-var menuPosition;
-var menuPositionX;
-var menuPositionY;
+	// find which thing we clicked on ( or null if FA )
+	contextCodeBlock  = codeBlocks.codeBlockAt(mp.x, mp.y);
 
-var windowWidth;
-var windowHeight;
+	// XFER menu to page coords
+	var pageX = canvas.offsetLeft + mp.x - 2;
+	var pageY = canvas.offsetTop + mp.y - 2 ;
 
-/**
- * Initialise our application's code.
- */
-function init() {
-  contextListener();
-  clickListener();
-  keyupListener();
-  resizeListener();
+	// We right clicked on a hot zone - something's getting opened ...
+	openMenu( contextCodeBlock, pageX, pageY ) ;
+
+	// Don't do automatic stuff  - like a standard menu
+	e.preventDefault() ;
+	return false ;
 }
 
-/**
- * Get's exact position of event.
- * 
- * @param {Object} e The event passed in
- * @return {Object} Returns the x and y position
- */
-function getPosition(e) {
-  var posx = 0;
-  var posy = 0;
+var menu ;
+function openMenu( codeBlock, x, y ) {
+	if( menu ) {
+		if( menu.parentNode ) {
+			menu.parentNode.removeChild(menu);
+		}
+		menu = null ;
+	} else {
+		menu = document.createElement("nav");
+		menu.onmouseleave = function(e) { 
+			if( menu.parentNode ) {
+				menu.parentNode.removeChild(menu);
+			}
+			menu = null ;
+		} ;
+		document.getElementById("code").appendChild(menu);
+		menu.className = "context-menu" ;
+		menu.innerHTML = 
+			'<ul class="context-menu__items">' +
+			'	<li class="context-menu__item">View Task</li>' +
+			'	<li class="context-menu__item">Edit Task</li>' +
+			'	<li class="context-menu__item">Delete Task</li>' +
+			'</ul>' ;
 
-  if (!e) var e = window.event;
-  
-  if (e.pageX || e.pageY) {
-    posx = e.pageX;
-    posy = e.pageY;
-  } else if (e.clientX || e.clientY) {
-    posx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-    posy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-  }
-
-  return {
-    x: posx,
-    y: posy
-  }
-}
- 
-
-function clickInsideElement( e, className ) {
-    var el = e.srcElement || e.target;
-    
-    if ( el.classList.contains(className) ) {
-      return el;
-    } else {
-      while ( el = el.parentNode ) {
-        if ( el.classList && el.classList.contains(className) ) {
-          return el;
-        }
-      }
-    }
-
-    return false;
-  }
-/**
- * Listens for contextmenu events.
- */
-function contextListener() {
-  document.addEventListener( "contextmenu", function(e) {
-    taskItemInContext = clickInsideElement( e, taskItemClassName );
-
-    if ( taskItemInContext ) {
-      e.preventDefault();
-      toggleMenuOn();
-      positionMenu(e);
-    } else {
-      taskItemInContext = null;
-      toggleMenuOff();
-    }
-  });
+		menu.style.left = x+ "px" ;
+		menu.style.top = y+ "px" ;
+	}
 }
 
-/**
- * Listens for click events.
- */
-function clickListener() {
-  canvas.addEventListener( "click", function(e) {
-    var clickeElIsLink = clickInsideElement( e, contextMenuLinkClassName );
-
-    if ( clickeElIsLink ) {
-      e.preventDefault();
-      menuItemListener( clickeElIsLink );
-    } else {
-      var button = e.which || e.button;
-      if ( button === 1 ) {
-        toggleMenuOff();
-      }
-    }
-  });
-}
-
-/**
- * Listens for keyup events.
- */
-function keyupListener() {
-  window.onkeyup = function(e) {
-    if ( e.keyCode === 27 ) {
-      toggleMenuOff();
-    }
-  }
-}
-
-/**
- * Window resize event listener
- */
-function resizeListener() {
-  window.onresize = function(e) {
-    toggleMenuOff();
-  };
-}
-
-/**
- * Turns the custom context menu on.
- */
-function toggleMenuOn() {
-  if ( menuState !== 1 ) {
-    menuState = 1;
-    menu.classList.add( contextMenuActive );
-  }
-}
-
-/**
- * Turns the custom context menu off.
- */
-function toggleMenuOff() {
-  if ( menuState !== 0 ) {
-    menuState = 0;
-    menu.classList.remove( contextMenuActive );
-  }
-}
-
-/**
- * Positions the menu properly.
- * 
- * @param {Object} e The event
- */
-function positionMenu(e) {
-  clickCoords = getPosition(e);
-  clickCoordsX = clickCoords.x ;
-  clickCoordsY = clickCoords.y ;
-
-  menuWidth = menu.offsetWidth + 4;
-  menuHeight = menu.offsetHeight + 4;
-
-  windowWidth = window.innerWidth + window.scrollY ;
-  windowHeight = window.innerHeight + window.scrollY ;
-
-  if ( (windowWidth - clickCoordsX) < menuWidth ) {
-    menu.style.left = windowWidth - menuWidth + "px";
-  } else {
-    menu.style.left = clickCoordsX + "px";
-  }
-
-  if ( (windowHeight - clickCoordsY) < menuHeight ) {
-    menu.style.top = windowHeight - menuHeight + "px";
-  } else {
-    menu.style.top = clickCoordsY + "px";
-  }
-}
-
-/**
- * Dummy action function that logs an action when a menu item link is clicked
- * 
- * @param {HTMLElement} link The link that was clicked
- */
-function menuItemListener( link ) {
-  console.log( "Task ID - " + taskItemInContext.getAttribute("data-id") + ", Task action - " + link.getAttribute("data-action"));
-  toggleMenuOff();
-}
-
-/**
- * Run the app.
- */
-init();
