@@ -7,7 +7,7 @@ function CodeBlocks() {
 	}
 
 	this.testJoin = function(codeBlock) {
-		if (codeBlock.type !== 'event') {
+		if ( !codeBlock.start ) {
 			for (var i = 0; i < this.codeBlocks.length; i++) {
 				var testCodeBlock = this.codeBlocks[i];
 				if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
@@ -16,8 +16,17 @@ function CodeBlocks() {
 								- (testCodeBlock.y
 										+ testCodeBlock.height - 7)) < 5) {
 					codeBlock.joinBelow( testCodeBlock ) ;
-					break;
+					return;
 				}
+			}
+		}
+		for (var i = 0; i < this.codeBlocks.length; i++) {
+			var testCodeBlock = this.codeBlocks[i];
+			if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
+					&& Math
+					.abs(testCodeBlock.y - (codeBlock.y + codeBlock.height - 7)) < 5) {
+				testCodeBlock.joinBelow( codeBlock ) ;
+				return;
 			}
 		}
 	} ;
@@ -52,12 +61,14 @@ function CodeBlock( args ) {
 	this.type = args.type || 'block' ;
 	this.x = args.x || 0 ;
 	this.y = args.y || 0 ;
-	this.height = args.height || 50 ;
+	this.start = this.type === 'event' ;
+	this.numInputs = args.numInputs || 0 ;
+	this.output = args.output || false ;
+	this.height = args.height || ( 30 + ( 15 * this.numInputs ) ) ;
 	this.width = args.width || 300 ;
 	this.effectiveHeight = this.height ;
 	this.following = [],
 	this.parent = null
-
 
 	this.calcHeight = function() {
 		this.effectiveHeight = this.height;
@@ -69,33 +80,32 @@ function CodeBlock( args ) {
 
 
 	this.joinBelow = function( above ) {
-		this.parent = above;
-		above.following.push(this);
-
-		var ultimateParent = above;
-		while (ultimateParent.parent) {
-			ultimateParent = ultimateParent.parent;
+		if( !this.parent ) {		// must not join twice ( 2 tests for joining = above & below )
+			this.parent = above;
+			above.following.push(this);
+	
+			var ultimateParent = above;
+			while (ultimateParent.parent) {
+				ultimateParent = ultimateParent.parent;
+			}
+			ultimateParent.calcHeight();
 		}
-		ultimateParent.calcHeight();
 	}
 
 	this.draw = function ( ctx ) {
 		var poly;
-		if (this.type === 'event') {
-			poly = [ 7, 7, 7, this.height - 17, 2, this.height - 17, 2, this.height - 7, 7, this.height - 7,   7, this.height - 2,			// lhs 
-			         20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2, // bottom + bump in
-			         this.width - 2, 7					// rhs 
-			         	// top 
-			         ];
+		var lhs = this.output ? 
+				[ 7, 7, 7, this.height - 17, 2, this.height - 17, 2, this.height - 7, 7, this.height - 7,   7, this.height - 2 ] :
+				[ 7, 7, 7, this.height - 2 ] ;
+		var bot = [20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2 ] ;
+		var rhs = this.numInputs > 0 ? 
+				[ this.width - 2, this.height - 7, this.width - 7, this.height - 7,this.width - 7, this.height - 17 , this.width - 2, this.height - 17,this.width - 2, 7 ] :
+				[ this.width - 2, 7 ] ;
+		var top = this.start ? [ ] : [ 30, 7, 30, 2, 20, 2, 20, 7 ] ; 
 
-		} else {
-			poly = [ 7, 7, 7, this.height - 2, 			// lhs
-			         20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2,
-			         this.width - 2, this.height - 7, this.width - 7, this.height - 7,this.width - 7, this.height - 17 , this.width - 2, this.height - 17,this.width - 2, 7, 
-			         30, 7, 30, 2, 20, 2, 20, 7			// top + bump out 
-			         ];		
-		}
-		ctx.fillStyle = this.type === 'block' ? '#f00' : '#0f0';
+		poly =  lhs.concat( bot, rhs, top ) ;
+
+		ctx.fillStyle = this.type === 'block' ? '#00f' : this.type === 'event' ?'#0f0': '#f00' ;
 
 		ctx.beginPath();
 		ctx.moveTo(poly[0] + this.x, poly[1] + this.y);

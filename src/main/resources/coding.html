@@ -58,9 +58,6 @@
 <body>
 
 	<div>
-		<div id='toolkit'>
-			<canvas width='100' height='600'> </canvas>
-		</div>
 		<div id='code' class="task">
 			<canvas width='600' height='600' style='background:silver;'></canvas>
 		</div>
@@ -71,7 +68,7 @@
 		var canvasWidth = canvas.width;
 		var canvasHeight = canvas.height;
 
-		var draggedSprite = null;
+		var draggedCodeBlock = null;
 		var spriteOffsetX;
 		var spriteOffsetY;
 		var imageData = null;
@@ -97,8 +94,10 @@
 			following : [],
 			parent : null
 		}, {
-			name : 'YYY2',
-			type : 'block',
+			name : 'YYD',
+			type : 'display',
+			numInputs: 2 ,
+			output: true,
 			x : 300,
 			y : 300,
 			height : 50,
@@ -127,27 +126,26 @@
 			if (e.button === 0) {
 				var mp = getMousePos(canvas, e);
 				// set the drag flag
-				draggedSprite = codeBlocks.codeBlockAt(mp.x, mp.y);
-				if (draggedSprite) {
-					if (draggedSprite.parent) {
-						for (var i = 0; i < draggedSprite.parent.following.length; i++) {
-							if (draggedSprite === draggedSprite.parent.following[i]) {
-								draggedSprite.parent.following.splice(i, 1);
+				draggedCodeBlock = codeBlocks.codeBlockAt(mp.x, mp.y);
+				if (draggedCodeBlock) {
+					if (draggedCodeBlock.parent) {
+						for (var i = 0; i < draggedCodeBlock.parent.following.length; i++) {
+							if (draggedCodeBlock === draggedCodeBlock.parent.following[i]) {
+								draggedCodeBlock.parent.following.splice(i, 1);
 								break;
 							}
 						}
-						var ultimateParent = draggedSprite;
+						var ultimateParent = draggedCodeBlock;
 						while (ultimateParent.parent) {
 							ultimateParent = ultimateParent.parent;
 						}
 						ultimateParent.calcHeight();
-
-						draggedSprite.parent = null;
+						draggedCodeBlock.parent = null;
 					}
-					spriteOffsetX = draggedSprite.x - mp.x;
-					spriteOffsetY = draggedSprite.y - mp.y;
-					ctx.clearRect(draggedSprite.x, draggedSprite.y,
-							draggedSprite.width, draggedSprite.effectiveHeight);
+					spriteOffsetX = draggedCodeBlock.x - mp.x;
+					spriteOffsetY = draggedCodeBlock.y - mp.y;
+					ctx.clearRect(draggedCodeBlock.x, draggedCodeBlock.y,
+							draggedCodeBlock.width, draggedCodeBlock.effectiveHeight);
 
 					imgData = null;
 					handleMouseMove(e);
@@ -157,12 +155,12 @@
 
 		function handleMouseUp(e) {
 			if (e.button === 0) {
-				if (draggedSprite) {
-					var mp = getMousePos(canvas, e);
-					draggedSprite.x = mp.x + spriteOffsetX;
-					draggedSprite.y = mp.y + spriteOffsetY;
-					codeBlocks.testJoin(draggedSprite);
-					draggedSprite = null;
+				if (draggedCodeBlock) {
+//					var mp = getMousePos(canvas, e);
+//					draggedCodeBlock.x = mp.x + spriteOffsetX;
+//					draggedCodeBlock.y = mp.y + spriteOffsetY;
+					codeBlocks.testJoin(draggedCodeBlock);
+					draggedCodeBlock = null;
 					imgData = null;
 					redrawAll();
 				}
@@ -176,20 +174,19 @@
 
 		function handleMouseMove(e) {
 			var mp = getMousePos(canvas, e);
-			//console.log( mp.x, ",", mp.y ) ;
 			// if the drag flag is set, clear the canvas and draw the image
-			if (draggedSprite && e.button === 0) {
+			if (draggedCodeBlock && e.button === 0) {
 				if (imgData) {
-					ctx.putImageData(imgData, draggedSprite.x, draggedSprite.y);
+					ctx.putImageData(imgData, draggedCodeBlock.x, draggedCodeBlock.y);
 				}
 
-				draggedSprite.x = mp.x + spriteOffsetX;
-				draggedSprite.y = mp.y + spriteOffsetY;
+				draggedCodeBlock.x = mp.x + spriteOffsetX;
+				draggedCodeBlock.y = mp.y + spriteOffsetY;
 
-				imgData = ctx.getImageData(draggedSprite.x, draggedSprite.y,
-						draggedSprite.width, draggedSprite.effectiveHeight);
+				imgData = ctx.getImageData(draggedCodeBlock.x, draggedCodeBlock.y,
+						draggedCodeBlock.width, draggedCodeBlock.effectiveHeight);
 
-				draggedSprite.draw(ctx);
+				draggedCodeBlock.draw(ctx);
 
 			}
 		}
