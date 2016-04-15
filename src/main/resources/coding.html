@@ -78,10 +78,9 @@
 			type : 'block',
 			x : 100,
 			y : 100,
-			height : 30,
-			effectiveHeight : 30,
+			height : 50,
+			effectiveHeight : 50,
 			width : 250,
-			following : [],
 			parent : null
 		}, {
 			name : 'YYY',
@@ -91,7 +90,6 @@
 			height : 50,
 			effectiveHeight : 50,
 			width : 250,
-			following : [],
 			parent : null
 		}, {
 			name : 'YYD',
@@ -103,7 +101,6 @@
 			height : 50,
 			effectiveHeight : 50,
 			width : 250,
-			following : [],
 			parent : null
 		}, {
 			name : 'ZZZ',
@@ -113,7 +110,6 @@
 			height : 75,
 			effectiveHeight : 75,
 			width : 250,
-			following : [],
 			parent : null
 		} ];
 
@@ -129,11 +125,8 @@
 				draggedCodeBlock = codeBlocks.codeBlockAt(mp.x, mp.y);
 				if (draggedCodeBlock) {
 					if (draggedCodeBlock.parent) {
-						for (var i = 0; i < draggedCodeBlock.parent.following.length; i++) {
-							if (draggedCodeBlock === draggedCodeBlock.parent.following[i]) {
-								draggedCodeBlock.parent.following.splice(i, 1);
-								break;
-							}
+						if (draggedCodeBlock === draggedCodeBlock.parent.following) {
+							draggedCodeBlock.parent.following = null ;
 						}
 						var ultimateParent = draggedCodeBlock;
 						while (ultimateParent.parent) {

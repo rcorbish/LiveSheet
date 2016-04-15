@@ -1,4 +1,5 @@
 
+
 function CodeBlocks() {
 	this.codeBlocks = [] ;
 
@@ -10,23 +11,31 @@ function CodeBlocks() {
 		if ( !codeBlock.start ) {
 			for (var i = 0; i < this.codeBlocks.length; i++) {
 				var testCodeBlock = this.codeBlocks[i];
-				if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
-						&& Math
-						.abs(codeBlock.y
-								- (testCodeBlock.y
-										+ testCodeBlock.height - 7)) < 5) {
-					codeBlock.joinBelow( testCodeBlock ) ;
-					return;
+				if( testCodeBlock.following !== codeBlock ) {
+					if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
+							&& Math
+							.abs(codeBlock.y
+									- (testCodeBlock.y
+											+ testCodeBlock.height - 7)) < 5) {
+						codeBlock.joinBelow( testCodeBlock ) ;
+						return;
+					}
 				}
 			}
 		}
+		// Joining by moving above a block
+		var cb = codeBlock ;
+		while( cb.following ) cb=cb.following ;  // find bottom block in chain to match
+		
 		for (var i = 0; i < this.codeBlocks.length; i++) {
 			var testCodeBlock = this.codeBlocks[i];
-			if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
-					&& Math
-					.abs(testCodeBlock.y - (codeBlock.y + codeBlock.height - 7)) < 5) {
-				testCodeBlock.joinBelow( codeBlock ) ;
-				return;
+			if( cb.following !== testCodeBlock ) {
+					if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
+						&& Math
+						.abs(testCodeBlock.y - (cb.y + cb.height - 7)) < 5) {
+					testCodeBlock.joinBelow( cb ) ;
+					return;
+				}
 			}
 		}
 	} ;
@@ -57,7 +66,7 @@ function CodeBlocks() {
 }
 
 function CodeBlock( args ) {
-	this.name = args.name || "" ;
+	this.name = args.name || "name" ;
 	this.type = args.type || 'block' ;
 	this.x = args.x || 0 ;
 	this.y = args.y || 0 ;
@@ -67,62 +76,68 @@ function CodeBlock( args ) {
 	this.height = args.height || ( 30 + ( 15 * this.numInputs ) ) ;
 	this.width = args.width || 300 ;
 	this.effectiveHeight = this.height ;
-	this.following = [],
+	this.following = null,
 	this.parent = null
 
 	this.calcHeight = function() {
 		this.effectiveHeight = this.height;
-		for (var i = 0; i < this.following.length; i++) {
-			this.effectiveHeight += this.following[i].calcHeight();
+		if( this.following ) {
+			this.effectiveHeight += this.following.calcHeight();
 		}
 		return this.effectiveHeight;
 	}
 
 
 	this.joinBelow = function( above ) {
-		if( !this.parent ) {		// must not join twice ( 2 tests for joining = above & below )
-			this.parent = above;
-			above.following.push(this);
-	
-			var ultimateParent = above;
-			while (ultimateParent.parent) {
-				ultimateParent = ultimateParent.parent;
-			}
-			ultimateParent.calcHeight();
+		this.parent = above;
+		if( above.following ) {
+			var cb = this ;
+			while( cb.following ) cb = cb.following ;
+			above.following.joinBelow( cb ) ;
 		}
+		above.following = this ;
+		var ultimateParent = above;
+		while (ultimateParent.parent) {
+			ultimateParent = ultimateParent.parent;
+		}
+		ultimateParent.calcHeight();
 	}
 
 	this.draw = function ( ctx ) {
 		var poly;
 		var lhs = this.output ? 
 				[ 7, 7, 7, this.height - 17, 2, this.height - 17, 2, this.height - 7, 7, this.height - 7,   7, this.height - 2 ] :
-				[ 7, 7, 7, this.height - 2 ] ;
-		var bot = [20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2 ] ;
-		var rhs = this.numInputs > 0 ? 
-				[ this.width - 2, this.height - 7, this.width - 7, this.height - 7,this.width - 7, this.height - 17 , this.width - 2, this.height - 17,this.width - 2, 7 ] :
-				[ this.width - 2, 7 ] ;
-		var top = this.start ? [ ] : [ 30, 7, 30, 2, 20, 2, 20, 7 ] ; 
+					[ 7, 7, 7, this.height - 2 ] ;
+				var bot = [20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2 ] ;
+				var rhs = this.numInputs > 0 ? 
+						[ this.width - 2, this.height - 7, this.width - 7, this.height - 7,this.width - 7, this.height - 17 , this.width - 2, this.height - 17,this.width - 2, 7 ] :
+							[ this.width - 2, 7 ] ;
+						var top = this.start ? [ ] : [ 30, 7, 30, 2, 20, 2, 20, 7 ] ; 
 
-		poly =  lhs.concat( bot, rhs, top ) ;
+						poly =  lhs.concat( bot, rhs, top ) ;
 
-		ctx.fillStyle = this.type === 'block' ? '#00f' : this.type === 'event' ?'#0f0': '#f00' ;
+						ctx.fillStyle = this.type === 'block' ? '#0aa' : this.type === 'event' ?'#0a0': '#820' ;
 
-		ctx.beginPath();
-		ctx.moveTo(poly[0] + this.x, poly[1] + this.y);
-		for (var item = 2; item < poly.length - 1; item += 2) {
-			ctx.lineTo(poly[item] + this.x, poly[item + 1]
-			+ this.y);
-		}
+						ctx.beginPath();
+						ctx.moveTo(poly[0] + this.x, poly[1] + this.y);
+						for (var item = 2; item < poly.length - 1; item += 2) {
+							ctx.lineTo(poly[item] + this.x, poly[item + 1]
+							+ this.y);
+						}
 
-		ctx.closePath();
-		ctx.fill();
-		ctx.stroke();
-		for (var i = 0; i < this.following.length; i++) {
-			var cb = this.following[i];
-			cb.x = this.x;
-			cb.y = this.y + this.height - 7;
-			cb.draw(ctx);
-		}
+						ctx.closePath();
+						ctx.fill();
+						ctx.stroke();
+						if( this.following ) {
+							this.following.x = this.x;
+							this.following.y = this.y + this.height - 7;
+							this.following.draw(ctx);
+						}
+
+
+						ctx.font = "12px sans";
+						ctx.fillStyle = "#fff" ;
+						ctx.fillText( this.name, this.x+15, this.y+20, this.width-30 );
 	} ;
 }
 

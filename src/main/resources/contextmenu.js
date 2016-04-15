@@ -1,14 +1,13 @@
 
-var contextCodeBlock = null ;
 
 function handleContextMenu(e) {
 
 	var mp = getMousePos(canvas, e);
 
 	// find which thing we clicked on ( or null if FA )
-	contextCodeBlock  = codeBlocks.codeBlockAt(mp.x, mp.y);
+	var contextCodeBlock  = codeBlocks.codeBlockAt(mp.x, mp.y);
 
-	// XFER menu to page coords
+	// XLAT menu to page coords
 	var pageX = canvas.offsetLeft + mp.x - 2;
 	var pageY = canvas.offsetTop + mp.y - 2 ;
 
@@ -17,35 +16,41 @@ function handleContextMenu(e) {
 
 	// Don't do automatic stuff  - like a standard menu
 	e.preventDefault() ;
+
 	return false ;
 }
 
+
 var menu ;
 function openMenu( codeBlock, x, y ) {
-	if( menu ) {
+	menu = document.createElement("nav");
+	menu.onmouseleave = function(e) { 
 		if( menu.parentNode ) {
 			menu.parentNode.removeChild(menu);
 		}
+		redrawAll() ;
 		menu = null ;
-	} else {
-		menu = document.createElement("nav");
-		menu.onmouseleave = function(e) { 
-			if( menu.parentNode ) {
-				menu.parentNode.removeChild(menu);
-			}
-			menu = null ;
-		} ;
-		document.getElementById("code").appendChild(menu);
-		menu.className = "context-menu" ;
-		menu.innerHTML = 
-			'<ul class="context-menu__items">' +
-			'	<li class="context-menu__item">View Task</li>' +
-			'	<li class="context-menu__item">Edit Task</li>' +
-			'	<li class="context-menu__item">Delete Task</li>' +
-			'</ul>' ;
+	} ;
+	document.getElementById("code").appendChild(menu);
+	menu.className = "context-menu" ;
 
-		menu.style.left = x+ "px" ;
-		menu.style.top = y+ "px" ;
-	}
+	menu.innerHTML = 
+		'<input id="name-edit">' +
+		'<ul class="context-menu__items">' +
+		'	<li class="context-menu__item">View Task</li>' +
+		'	<li class="context-menu__item">Edit Task</li>' +
+		'	<li class="context-menu__item">Delete Task</li>' +
+		'</ul>' ;
+
+	var nameInput = menu.querySelector( "#name-edit" ) ;
+	nameInput.value = codeBlock.name ;	
+	nameInput.oninput = function(e) {
+		codeBlock.name = this.value ;
+		codeBlock.draw(ctx) ;
+	} ;
+	
+	nameInput.focus() ;
+	menu.style.left = x+ "px" ;
+	menu.style.top = y+ "px" ;
 }
 
