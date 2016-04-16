@@ -32,7 +32,7 @@ public class SheetWebSocket extends WebSocketAdapter {
 		executor.scheduleAtFixedRate(() -> {
 				clock++ ;
 				sendStuff( clock ); 
-			}, 0, 60, TimeUnit.SECONDS
+			}, 0, 1, TimeUnit.MILLISECONDS
 		);
 		
 	}
@@ -59,7 +59,7 @@ public class SheetWebSocket extends WebSocketAdapter {
 			if (session.isOpen()) {
 				StringBuilder sb = new StringBuilder() ;
 				sb.append( "{ \"A3\": " ).append( clock ).append( "," ) ;
-				sb.append( "\"B5\": " ).append( clock ).append( "}" ) ;
+				sb.append( "\"B5\": " ).append( System.currentTimeMillis() ).append( "}" ) ;
 				session.getRemote().sendString( sb.toString() ) ;
 			}
 		} catch (Throwable t) {

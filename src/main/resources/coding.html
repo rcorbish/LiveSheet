@@ -76,8 +76,8 @@
 		var codeBlockData = [ {
 			name : 'XXX',
 			type : 'block',
-			x : 100,
-			y : 100,
+			x : 150,
+			y : 130,
 			height : 50,
 			effectiveHeight : 50,
 			width : 250,
@@ -111,6 +111,15 @@
 			effectiveHeight : 75,
 			width : 250,
 			parent : null
+		}, {
+			name : 'END',
+			type : 'end',
+			x : 10,
+			y : 40,
+			height : 75,
+			effectiveHeight : 75,
+			width : 250,
+			parent : null
 		} ];
 
 		var codeBlocks = new CodeBlocks();
@@ -137,8 +146,8 @@
 					}
 					spriteOffsetX = draggedCodeBlock.x - mp.x;
 					spriteOffsetY = draggedCodeBlock.y - mp.y;
-					ctx.clearRect(draggedCodeBlock.x, draggedCodeBlock.y,
-							draggedCodeBlock.width, draggedCodeBlock.effectiveHeight);
+					ctx.clearRect(draggedCodeBlock.x-2, draggedCodeBlock.y-2,
+							draggedCodeBlock.width+4, draggedCodeBlock.effectiveHeight+4);
 
 					imgData = null;
 					handleMouseMove(e);
@@ -152,6 +161,9 @@
 //					var mp = getMousePos(canvas, e);
 //					draggedCodeBlock.x = mp.x + spriteOffsetX;
 //					draggedCodeBlock.y = mp.y + spriteOffsetY;
+
+					var rc = codeBlocks.joinedToEdgeOf(draggedCodeBlock);
+					console.log( rc  ) ;
 					codeBlocks.testJoin(draggedCodeBlock);
 					draggedCodeBlock = null;
 					imgData = null;
@@ -170,14 +182,14 @@
 			// if the drag flag is set, clear the canvas and draw the image
 			if (draggedCodeBlock && e.button === 0) {
 				if (imgData) {
-					ctx.putImageData(imgData, draggedCodeBlock.x, draggedCodeBlock.y);
+					ctx.putImageData(imgData, draggedCodeBlock.x-2, draggedCodeBlock.y-2);
 				}
 
 				draggedCodeBlock.x = mp.x + spriteOffsetX;
 				draggedCodeBlock.y = mp.y + spriteOffsetY;
 
-				imgData = ctx.getImageData(draggedCodeBlock.x, draggedCodeBlock.y,
-						draggedCodeBlock.width, draggedCodeBlock.effectiveHeight);
+				imgData = ctx.getImageData(draggedCodeBlock.x-2, draggedCodeBlock.y-2,
+						draggedCodeBlock.width+4, draggedCodeBlock.effectiveHeight+4);
 
 				draggedCodeBlock.draw(ctx);
 
