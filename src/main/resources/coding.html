@@ -78,48 +78,33 @@
 			type : 'block',
 			x : 150,
 			y : 130,
-			height : 50,
-			effectiveHeight : 50,
-			width : 250,
-			parent : null
+			width : 250
 		}, {
 			name : 'YYY',
 			type : 'block',
 			x : 20,
 			y : 300,
-			height : 50,
-			effectiveHeight : 50,
-			width : 250,
-			parent : null
+			width : 250
 		}, {
 			name : 'YYD',
 			type : 'display',
-			numInputs: 2 ,
+			numInputs: 1 ,
 			output: true,
 			x : 300,
 			y : 300,
-			height : 50,
-			effectiveHeight : 50,
-			width : 250,
-			parent : null
+			width : 250
 		}, {
 			name : 'ZZZ',
 			type : 'event',
 			x : 100,
 			y : 400,
-			height : 75,
-			effectiveHeight : 75,
-			width : 250,
-			parent : null
+			width : 250
 		}, {
 			name : 'END',
 			type : 'end',
 			x : 10,
-			y : 40,
-			height : 75,
-			effectiveHeight : 75,
-			width : 250,
-			parent : null
+			y : 400,
+			width : 250
 		} ];
 
 		var codeBlocks = new CodeBlocks();
@@ -133,17 +118,8 @@
 				// set the drag flag
 				draggedCodeBlock = codeBlocks.codeBlockAt(mp.x, mp.y);
 				if (draggedCodeBlock) {
-					if (draggedCodeBlock.parent) {
-						if (draggedCodeBlock === draggedCodeBlock.parent.following) {
-							draggedCodeBlock.parent.following = null ;
-						}
-						var ultimateParent = draggedCodeBlock;
-						while (ultimateParent.parent) {
-							ultimateParent = ultimateParent.parent;
-						}
-						ultimateParent.calcHeight();
-						draggedCodeBlock.parent = null;
-					}
+					draggedCodeBlock.setParent( null ) ;
+
 					spriteOffsetX = draggedCodeBlock.x - mp.x;
 					spriteOffsetY = draggedCodeBlock.y - mp.y;
 					ctx.clearRect(draggedCodeBlock.x-2, draggedCodeBlock.y-2,
@@ -158,13 +134,7 @@
 		function handleMouseUp(e) {
 			if (e.button === 0) {
 				if (draggedCodeBlock) {
-//					var mp = getMousePos(canvas, e);
-//					draggedCodeBlock.x = mp.x + spriteOffsetX;
-//					draggedCodeBlock.y = mp.y + spriteOffsetY;
-
-					var rc = codeBlocks.joinedToEdgeOf(draggedCodeBlock);
-					console.log( rc  ) ;
-					codeBlocks.testJoin(draggedCodeBlock);
+					codeBlocks.joinBlock(draggedCodeBlock);
 					draggedCodeBlock = null;
 					imgData = null;
 					redrawAll();
