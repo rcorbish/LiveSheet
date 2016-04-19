@@ -111,7 +111,7 @@ function CodeBlock( args ) {
 			while( bottomChild.following ) bottomChild = bottomChild.following ; 
 			currentChild.insertAfter( bottomChild ) ;
 		}
-		if( this.parent && above && above.start ) {  // if a start block is being inserted ..
+		if( this.parent && above && above.start ) {  // if a start block is replacing existing parent...
 													// we won't join properly so move 
 													// the above blocks out of the way
 			var up = this.parent ;
