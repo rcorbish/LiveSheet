@@ -17,23 +17,23 @@ function CodeBlocks() {
 			if( codeBlock === testCodeBlock ) continue ;   // can't join to self don't test
 			if( testCodeBlock.following === codeBlock ) continue ;	// if we're already joined to the block don't test
 			// if we're at the same x and the top of the input test block is at the bottom of another block...
-			if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
-					&& Math.abs(codeBlock.y - (testCodeBlock.y + testCodeBlock.height - 7)) < 5) {
+			if (Math.abs(codeBlock.x - testCodeBlock.x) < 9
+					&& Math.abs(codeBlock.y - (testCodeBlock.y + testCodeBlock.height - 7)) < 9) {
 				rc.top = testCodeBlock ;
 			}			
 			// if we're at the same y and the top of the input test block is at the right of another block...
-			if (Math.abs(codeBlock.y - testCodeBlock.y) < 5
-					&& Math.abs(codeBlock.x - (testCodeBlock.x + testCodeBlock.width - 7)) < 5) {
+			if (Math.abs(codeBlock.y - testCodeBlock.y) < 9
+					&& Math.abs(codeBlock.x - (testCodeBlock.x + testCodeBlock.width - 7)) < 9) {
 				rc.left = testCodeBlock ;
 			}			
 			// if we're at the same y and the top of the input test block is at the left of another block...
-			if (Math.abs(codeBlock.y - testCodeBlock.y) < 5
-					&& Math.abs(testCodeBlock.x - (codeBlock.x + codeBlock.width - 7)) < 5) {
+			if (Math.abs(codeBlock.y - testCodeBlock.y) < 9
+					&& Math.abs(testCodeBlock.x - (codeBlock.x + codeBlock.width - 7)) < 9) {
 				rc.right = testCodeBlock ;
 			}			
 
-			if (Math.abs(codeBlock.x - testCodeBlock.x) < 5
-					&& Math.abs(testCodeBlock.y - (codeBlock.y + codeBlock.effectiveHeight - 7)) < 5) {
+			if (Math.abs(codeBlock.x - testCodeBlock.x) < 9
+					&& Math.abs(testCodeBlock.y - (codeBlock.y + codeBlock.effectiveHeight - 7)) < 9) {
 				rc.bottom = testCodeBlock ;
 			}
 		}
@@ -47,10 +47,9 @@ function CodeBlocks() {
 			console.log( "Join", joinInfo.top.name, "above", codeBlock.name ) ;
 			codeBlock.joinBelow( joinInfo.top ) ;
 		} else if( joinInfo.bottom ) {
-			console.log( "Join", joinInfo.bottom.name, "below", codeBlock.name ) ;
 			var endOfChain = codeBlock ;
 			while( endOfChain.following ) endOfChain=endOfChain.following ;
-
+			console.log( "Join", joinInfo.bottom.name, "below", codeBlock.name ) ;
 			joinInfo.bottom.joinBelow( endOfChain ) ;
 		}
 	}
@@ -107,7 +106,10 @@ function CodeBlock( args ) {
 	this.joinBelow = function( above ) {
 		var currentChild = above.following ;
 		if( currentChild ) {
-			currentChild.joinBelow( this ) ;
+			// if the above already has a child  - replace it with this (or the bottom of this' chain )
+			var bottomChild = this ;			
+			while( bottomChild.following ) bottomChild = bottomChild.following ; 
+			currentChild.joinBelow( bottomChild ) ;
 		}
 		this.setParent( above ) ;
 

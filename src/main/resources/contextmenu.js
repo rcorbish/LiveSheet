@@ -25,11 +25,7 @@ var menu ;
 function openMenu( codeBlock, x, y ) {
 	menu = document.createElement("nav");
 	menu.onmouseleave = function(e) { 
-		if( menu.parentNode ) {
-			menu.parentNode.removeChild(menu);
-		}
-		redrawAll() ;
-		menu = null ;
+		closeMenu() ;
 	} ;
 	document.getElementById("code").appendChild(menu);
 	menu.className = "context-menu" ;
@@ -48,9 +44,19 @@ function openMenu( codeBlock, x, y ) {
 		codeBlock.name = this.value ;
 		codeBlock.draw(ctx) ;
 	} ;
-	
+	nameInput.onkeypress = function(e) {
+		if(e.keyCode === 13){
+			closeMenu() ;
+		}
+	} ;
 	nameInput.focus() ;
 	menu.style.left = x+ "px" ;
 	menu.style.top = y+ "px" ;
 }
 
+function closeMenu() {
+	if( menu.parentNode ) {
+		menu.parentNode.removeChild(menu);
+	}
+	redrawAll() ;
+}
