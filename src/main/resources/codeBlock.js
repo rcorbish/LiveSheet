@@ -43,14 +43,14 @@ function CodeBlocks() {
 	this.joinBlock  = function(codeBlock) {
 		var joinInfo = this.joinedToEdgeOf( codeBlock ) ;
 
-		if( joinInfo.top ) {
+		if( joinInfo.top && !codeBlock.start ) {  // don't test for join top if we're a start block
 			console.log( "Join", joinInfo.top.name, "above", codeBlock.name ) ;
-			codeBlock.joinBelow( joinInfo.top ) ;
+			codeBlock.insertAfter( joinInfo.top ) ;
 		} else if( joinInfo.bottom ) {
 			var endOfChain = codeBlock ;
 			while( endOfChain.following ) endOfChain=endOfChain.following ;
 			console.log( "Join", joinInfo.bottom.name, "below", codeBlock.name ) ;
-			joinInfo.bottom.joinBelow( endOfChain ) ;
+			joinInfo.bottom.insertAfter( endOfChain ) ;
 		}
 	}
 
@@ -103,13 +103,23 @@ function CodeBlock( args ) {
 		return this.effectiveHeight;
 	} ;
 
-	this.joinBelow = function( above ) {
+	this.insertAfter = function( above ) {
 		var currentChild = above.following ;
 		if( currentChild ) {
 			// if the above already has a child  - replace it with this (or the bottom of this' chain )
 			var bottomChild = this ;			
 			while( bottomChild.following ) bottomChild = bottomChild.following ; 
-			currentChild.joinBelow( bottomChild ) ;
+			currentChild.insertAfter( bottomChild ) ;
+		}
+		if( this.parent && above && above.start ) {  // if a start block is being inserted ..
+													// we won't join properly so move 
+													// the above blocks out of the way
+			var up = this.parent ;
+			while( up.parent ) { 
+				up = up.parent ; 
+			}
+			up.x -= 15 ;
+			up.y -= 15 + above.height ;			
 		}
 		this.setParent( above ) ;
 
@@ -120,6 +130,7 @@ function CodeBlock( args ) {
 		ultimateParent.calcHeight();
 	} ;
 
+
 	this.setParent = function( p ) {
 		if( !this.start ) { 
 			// if already have a parent - make sure parent doesn't think 
@@ -128,7 +139,7 @@ function CodeBlock( args ) {
 				this.parent.following = null ;
 				var up = this.parent ;
 				while( up.parent ) up = up.parent ;
-				up.calcHeight() ;			
+				up.calcHeight() ;
 			}
 
 			// if parent has something else in the chain (that I am replacing)...

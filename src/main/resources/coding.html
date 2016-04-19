@@ -12,7 +12,6 @@
 }
 
 .task {
-	xdisplay: flex;
 	justify-content: space-between;
 	padding: 12px 0;
 	border-bottom: solid 1px #dfdfdf;
@@ -52,14 +51,49 @@
 	color: #fff;
 	background-color: #0066aa;
 }
+#code {
+	margin: 0px ;
+	padding: 0px ;
+}
+#code canvas {
+	margin: 0px ;
+	padding: 0px ;
+	background: silver ;
+	width: 100% ;
+	height: 600px ;
+}
+#menu {
+	background-color: #234588;
+	color: #a0c0ff ;
+	font-family: sans ;
+	margin: 0px ;
+	padding: 0px ;
+}
+#menu ul {
+	margin: 0px ;
+	padding: 0px ;
+}
+
+#menu li {
+    display: inline;
+    padding: 5px ;
+}
 </style>
 </head>
 
 <body>
 
 	<div>
+		<div id='menu'>
+			<ul>
+				<li>Build</li>
+				<li>Step</li>
+				<li>Run</li>
+			</ul>
+		</div>
+		
 		<div id='code' class="task">
-			<canvas width='600' height='600' style='background:silver;'></canvas>
+			<canvas width=900 height=600 ></canvas>
 		</div>
 	</div>
 
