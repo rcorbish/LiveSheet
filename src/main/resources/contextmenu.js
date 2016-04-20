@@ -5,7 +5,8 @@ function handleContextMenu(e) {
 	var mp = getMousePos(canvas, e);
 
 	// find which thing we clicked on ( or null if FA )
-	var contextCodeBlock  = codeBlocks.codeBlockAt(mp.x, mp.y);
+	var data = ctx.getImageData(mp.x, mp.y, 1, 1).data;
+	var contextCodeBlock  = codeBlocks.codeBlockAt(mp.x, mp.y, [ data[0], data[1], data[2], data[3] ] );
 
 	// XLAT menu to page coords
 	var pageX = canvas.offsetLeft + mp.x - 2;

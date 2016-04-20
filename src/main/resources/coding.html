@@ -5,6 +5,11 @@
 <script src='contextmenu.js'></script>
 
 <style>
+@import url("http://fonts.googleapis.com/css?family=Lato:300");
+html {
+	font-family: "Lato";
+}
+
 .tasks {
 	list-style: none;
 	margin: 0;
@@ -58,25 +63,47 @@
 #code canvas {
 	margin: 0px ;
 	padding: 0px ;
-	background: silver ;
-	width: 100% ;
-	height: 600px ;
+	background: antiquewhite ;
 }
 #menu {
 	background-color: #234588;
 	color: #a0c0ff ;
-	font-family: sans ;
 	margin: 0px ;
 	padding: 0px ;
 }
 #menu ul {
 	margin: 0px ;
 	padding: 0px ;
+	font-weight: bold ;
+	font-size: 14pt ;
 }
 
 #menu li {
     display: inline;
     padding: 5px ;
+}
+
+.shimmer {
+  text-align: left;
+  background: -webkit-gradient(linear, left top, right top, from(#222), to(#222), color-stop(0.5, #fff));
+  background-size: 125px 100%;
+  -webkit-background-clip: text;
+  -moz-background-clip: text;
+  background-clip: text;
+  
+  animation-name: shimmer;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+@keyframes shimmer {
+  0% {
+    background-position: top left;
+  }
+  100% {
+    background-position: top right;
+  }
 }
 </style>
 </head>
@@ -84,8 +111,8 @@
 <body>
 
 	<div>
-		<div id='menu'>
-			<ul>
+		<div id='menu' >
+			<ul class='shimmer'>
 				<li>Build</li>
 				<li>Step</li>
 				<li>Run</li>
@@ -139,6 +166,12 @@
 			x : 10,
 			y : 400,
 			width : 250
+		}, {
+			name : 'IF',
+			type : 'if',
+			x : 30,
+			y : 230,
+			width : 250
 		} ];
 
 		var codeBlocks = new CodeBlocks();
@@ -149,8 +182,10 @@
 		function handleMouseDown(e) {
 			if (e.button === 0) {
 				var mp = getMousePos(canvas, e);
-				// set the drag flag
-				draggedCodeBlock = codeBlocks.codeBlockAt(mp.x, mp.y);
+
+				var data = ctx.getImageData(mp.x, mp.y, 1, 1).data;
+				
+				draggedCodeBlock = codeBlocks.codeBlockAt(mp.x, mp.y, [ data[0], data[1], data[2], data[3] ] );
 				if (draggedCodeBlock) {
 					draggedCodeBlock.setParent( null ) ;
 
@@ -158,7 +193,7 @@
 					spriteOffsetY = draggedCodeBlock.y - mp.y;
 					ctx.clearRect(draggedCodeBlock.x-2, draggedCodeBlock.y-2,
 							draggedCodeBlock.width+4, draggedCodeBlock.effectiveHeight+4);
-
+					redrawAll() ;
 					imgData = null;
 					handleMouseMove(e);
 				}
@@ -228,7 +263,7 @@
 
 		function redrawAll() {
 			canvas.width = canvas.width; // clear screen
-			codeBlocks.draw(ctx);
+			codeBlocks.draw(ctx, draggedCodeBlock );
 		}
 
 		redrawAll();

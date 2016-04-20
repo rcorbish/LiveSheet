@@ -36,6 +36,12 @@ function CodeBlocks() {
 					&& Math.abs(testCodeBlock.y - (codeBlock.y + codeBlock.effectiveHeight - 7)) < 9) {
 				rc.bottom = testCodeBlock ;
 			}
+			// At an offset x and the parent is a nestable
+			if ( testCodeBlock.nested && 
+					Math.abs(codeBlock.x - testCodeBlock.x -50) < 9
+					&& Math.abs(codeBlock.y - (testCodeBlock.y + 40 - 7)) < 9) {
+				rc.nested = testCodeBlock ;
+			}			
 		}
 		return rc ;
 	}
@@ -51,25 +57,31 @@ function CodeBlocks() {
 			while( endOfChain.following ) endOfChain=endOfChain.following ;
 			console.log( "Join", joinInfo.bottom.name, "below", codeBlock.name ) ;
 			joinInfo.bottom.insertAfter( endOfChain ) ;
+		} else if( joinInfo.nested ) {
+			console.log( "Join", codeBlock.name, "inside", joinInfo.nested.name ) ;
+			joinInfo.nested.child = codeBlock ;
+			codeBlock.parent = joinInfo.nested ; 
 		}
 	}
 
 
-	this.draw = function( ctx ) {
+	this.draw = function( ctx, draggedCodeBlock ) {
 		for (var i = 0; i < this.codeBlocks.length; i++) {
 			var codeBlock = this.codeBlocks[i];
-			if (!codeBlock.parent) {
-				codeBlock.draw( ctx );
+			if( draggedCodeBlock !== codeBlock ) {
+				if (!codeBlock.parent) {
+					codeBlock.draw( ctx );
+				}
 			}
 		}
 	} ;
 
-	this.codeBlockAt = function( x,y ) {
+	this.codeBlockAt = function( x,y, color ) {
 		var rc = null;
 		for (var i = this.codeBlocks.length; i>0 ; i--) {
 			var codeBlock = this.codeBlocks[i-1];
-
-			if (x > codeBlock.x
+// Color[3] is alpha component - if we're 0 then we're over a transparent area
+			if( color[3]!==0 && x > codeBlock.x
 					&& x<codeBlock.x+codeBlock.width && y>codeBlock.y
 					&& y < codeBlock.y + codeBlock.height) {
 				rc = codeBlock;
@@ -87,13 +99,37 @@ function CodeBlock( args ) {
 	this.y = args.y || 0 ;
 	this.start = this.type === 'event' ;
 	this.end = this.type === 'end' ;
+	this.nested = (this.type === 'if' || this.type === 'repeat' || this.type === 'else') ;
 	this.numInputs = args.numInputs || 0 ;
 	this.output = args.output || false ;
-	this.height = 20 * ( 2 + Math.max( 0, ( this.numInputs - 1 ) ) ) ;
+	this.height = this.nested ? 95 : ( 20 * ( 2 + Math.max( 0, ( this.numInputs - 1 ) ) ) ) ;
 	this.width = args.width || 300 ;
 	this.effectiveHeight = this.height ;
 	this.following = null,
 	this.parent = null
+
+	switch ( this.type ) {
+	case 'block' :
+		this.color = '#0aa' ;
+		break ;
+	case 'event' :
+		this.color = '#2a0' ;
+		break ;
+	case 'display' :
+		this.color = '#02a' ;
+		break ;
+	case 'end' :
+		this.color = '#a20';
+		break ;
+	case 'if' :
+	case 'else' :
+	case 'repeat' :
+		this.color = '#abc';
+		break ;
+	default :
+		this.color = '#eee';
+		break ;
+	}
 
 	this.calcHeight = function() {
 		this.effectiveHeight = this.height;
@@ -164,69 +200,51 @@ function CodeBlock( args ) {
 
 	this.draw = function ( ctx ) {
 		var poly;
-
-		var lhs = this.output ? 
-				[ 5, 5, 5, this.height-15, 0, this.height-15, 0, this.height - 5, 5, this.height - 5,  5, this.height ] :
+		if( !this.nested ) {
+			var lhs = this.output ? 
+					[ 5, 5, 5, this.height-15, 0, this.height-15, 0, this.height - 5, 5, this.height - 5,  5, this.height ] :
 					[ 5, 5, 5, this.height ] ;
-				var bot = this.end ? 
-						[20, this.height, this.width, this.height ] :
-							[20, this.height, 20, this.height - 5, 30, this.height - 5, 30, this.height, this.width, this.height ] ;
-						var rhs = this.numInputs > 0 ? 
-								[ this.width, this.height - 5, this.width - 5, this.height - 5,this.width - 5, this.height - 15 , this.width, this.height - 15,this.width, 5 ] :
-									[ this.width, 5 ] ;
-								var top = this.start ? [ ] : [ 30, 5, 30, 0, 20, 0, 20, 5 ] ; 
+			var bot = this.end ? 
+					[20, this.height, this.width, this.height ] :
+					[20, this.height, 20, this.height - 5, 30, this.height - 5, 30, this.height, this.width, this.height ] ;
+			var rhs = this.numInputs > 0 ? 
+					[ this.width, this.height - 5, this.width - 5, this.height - 5,this.width - 5, this.height - 15 , this.width, this.height - 15,this.width, 5 ] :
+					[ this.width, 5 ] ;
+			var top = this.start ? [ ] : [ 30, 5, 30, 0, 20, 0, 20, 5 ] ; 
+	
+			poly =  lhs.concat( bot, rhs, top ) ;
+		} else {
+			poly = [ 5,5, 5,this.height,   20,this.height,   20,this.height-5,   30,this.height-5, 
+			         30,this.height,   45,this.height,   45,40, 70,40, 70,35, 80,35, 
+			         80,40, this.width,40, this.width,5, 30,5, 30,0, 20,0, 20,5]
+		}
+		ctx.fillStyle = this.color ;
+		ctx.beginPath();
+		ctx.moveTo(poly[0] + this.x, poly[1] + this.y);
+		for (var item = 2; item < poly.length - 1; item += 2) {
+			ctx.lineTo(poly[item] + this.x, poly[item + 1]
+			+ this.y);
+		}
 
-								/*								
-								var lhs = this.output ? 
-										[ 7, 7, 7, this.height - 17, 2, this.height - 17, 2, this.height - 7, 7, this.height - 7,   7, this.height - 2 ] :
-											[ 7, 7, 7, this.height - 2 ] ;
-										var bot = this.end ? 
-												[20, this.height - 2, this.width - 2, this.height - 2 ] :
-													[20, this.height - 2, 20, this.height - 7, 30, this.height - 7, 30, this.height - 2, this.width - 2, this.height - 2 ] ;
-												var rhs = this.numInputs > 0 ? 
-														[ this.width - 2, this.height - 7, this.width - 7, this.height - 7,this.width - 7, this.height - 17 , this.width - 2, this.height - 17,this.width - 2, 7 ] :
-															[ this.width - 2, 7 ] ;
-														var top = this.start ? [ ] : [ 30, 7, 30, 2, 20, 2, 20, 7 ] ; 
-								 */
-								poly =  lhs.concat( bot, rhs, top ) ;
+		ctx.closePath();
+		ctx.fill();
+		ctx.stroke();
+		if( this.following ) {
+			this.following.x = this.x;
+			this.following.y = this.y + this.height -5 ;
+			this.following.draw(ctx);
+		}
 
-								switch ( this.type ) {
-								case 'block' :
-									ctx.fillStyle = '#0aa' ;
-									break ;
-								case 'event' :
-									ctx.fillStyle = '#2a0' ;
-									break ;
-								case 'display' :
-									ctx.fillStyle = '#02a' ;
-									break ;
-								case 'end' :
-									ctx.fillStyle = '#a20';
-									break ;
-								default :
-									ctx.fillStyle = '#aaa';
-								break ;
-								}
-								ctx.beginPath();
-								ctx.moveTo(poly[0] + this.x, poly[1] + this.y);
-								for (var item = 2; item < poly.length - 1; item += 2) {
-									ctx.lineTo(poly[item] + this.x, poly[item + 1]
-									+ this.y);
-								}
-
-								ctx.closePath();
-								ctx.fill();
-								ctx.stroke();
-								if( this.following ) {
-									this.following.x = this.x;
-									this.following.y = this.y + this.height -5 ;
-									this.following.draw(ctx);
-								}
+		if( this.child ) {
+			this.child.x = this.x + 50 ;
+			this.child.y = this.y + 40 -5 ;
+			this.child.draw(ctx);
+		}
 
 
-								ctx.font = "12px sans";
-								ctx.fillStyle = "#fff" ;
-								ctx.fillText( this.name, this.x+15, this.y+20, this.width-30 );
+		ctx.font = "12px sans";
+		ctx.fillStyle = "#fff" ;
+		ctx.fillText( this.name, this.x+15, this.y+20, this.width-30 );
 	} ;
 }
 
