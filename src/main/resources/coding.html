@@ -188,6 +188,7 @@ html {
 				draggedCodeBlock = codeBlocks.codeBlockAt(mp.x, mp.y, [ data[0], data[1], data[2], data[3] ] );
 				if (draggedCodeBlock) {
 					draggedCodeBlock.setParent( null ) ;
+					draggedCodeBlock.setParent2( null ) ;
 
 					spriteOffsetX = draggedCodeBlock.x - mp.x;
 					spriteOffsetY = draggedCodeBlock.y - mp.y;

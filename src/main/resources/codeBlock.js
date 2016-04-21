@@ -7,7 +7,6 @@ function CodeBlocks() {
 		this.codeBlocks.push( codeBlock ) ;
 	}
 
-
 	this.joinedToEdgeOf = function(codeBlock) {
 		// Is the codeBlock underneath any another block ?
 		var rc = {} ;
@@ -15,7 +14,8 @@ function CodeBlocks() {
 		for (var i = 0; i < this.codeBlocks.length; i++) {
 			var testCodeBlock = this.codeBlocks[i];
 			if( codeBlock === testCodeBlock ) continue ;   // can't join to self don't test
-			if( testCodeBlock.following === codeBlock ) continue ;	// if we're already joined to the block don't test
+			if( testCodeBlock.child === codeBlock ) continue ;	// if we're already joined to the block don't test
+			
 			// if we're at the same x and the top of the input test block is at the bottom of another block...
 			if (Math.abs(codeBlock.x - testCodeBlock.x) < 9
 					&& Math.abs(codeBlock.y - (testCodeBlock.y + testCodeBlock.height - 7)) < 9) {
@@ -40,7 +40,7 @@ function CodeBlocks() {
 			if ( testCodeBlock.nested && 
 					Math.abs(codeBlock.x - testCodeBlock.x -50) < 9
 					&& Math.abs(codeBlock.y - (testCodeBlock.y + 40 - 7)) < 9) {
-				rc.nested = testCodeBlock ;
+				rc.parent2 = testCodeBlock ;
 			}			
 		}
 		return rc ;
@@ -54,13 +54,14 @@ function CodeBlocks() {
 			codeBlock.insertAfter( joinInfo.top ) ;
 		} else if( joinInfo.bottom ) {
 			var endOfChain = codeBlock ;
-			while( endOfChain.following ) endOfChain=endOfChain.following ;
+			while( endOfChain.child ) endOfChain=endOfChain.child ;
 			console.log( "Join", joinInfo.bottom.name, "below", codeBlock.name ) ;
 			joinInfo.bottom.insertAfter( endOfChain ) ;
-		} else if( joinInfo.nested ) {
-			console.log( "Join", codeBlock.name, "inside", joinInfo.nested.name ) ;
-			joinInfo.nested.child = codeBlock ;
-			codeBlock.parent = joinInfo.nested ; 
+		} else if( joinInfo.parent2 ) {
+			console.log( "Join", codeBlock.name, "inside", joinInfo.parent2.name ) ;
+			joinInfo.parent2.child2 = codeBlock ;
+			codeBlock.parent2 = joinInfo.parent2 ; 
+			redrawAll() ;
 		}
 	}
 
@@ -76,12 +77,14 @@ function CodeBlocks() {
 		}
 	} ;
 
+	var hexDigits = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' ] ;
 	this.codeBlockAt = function( x,y, color ) {
 		var rc = null;
+		var strColor = "#" + hexDigits[ Math.floor( color[0]/16 ) ] + hexDigits[ Math.floor( color[1]/16 ) ] + hexDigits[ Math.floor( color[2]/16 ) ]  ; 
 		for (var i = this.codeBlocks.length; i>0 ; i--) {
 			var codeBlock = this.codeBlocks[i-1];
 // Color[3] is alpha component - if we're 0 then we're over a transparent area
-			if( color[3]!==0 && x > codeBlock.x
+			if( color[3]!==0 && strColor === codeBlock.color && x > codeBlock.x
 					&& x<codeBlock.x+codeBlock.width && y>codeBlock.y
 					&& y < codeBlock.y + codeBlock.height) {
 				rc = codeBlock;
@@ -105,7 +108,7 @@ function CodeBlock( args ) {
 	this.height = this.nested ? 95 : ( 20 * ( 2 + Math.max( 0, ( this.numInputs - 1 ) ) ) ) ;
 	this.width = args.width || 300 ;
 	this.effectiveHeight = this.height ;
-	this.following = null,
+	this.child = null,
 	this.parent = null
 
 	switch ( this.type ) {
@@ -133,21 +136,21 @@ function CodeBlock( args ) {
 
 	this.calcHeight = function() {
 		this.effectiveHeight = this.height;
-		if( this.following ) {
-			this.effectiveHeight += this.following.calcHeight() - 5 ;
+		if( this.child ) {
+			this.effectiveHeight += this.child.calcHeight() - 5 ;
 		}
 		return this.effectiveHeight;
 	} ;
 
 	this.insertAfter = function( above ) {
-		var currentChild = above.following ;
+		var currentChild = above.child ;
 		if( currentChild ) {
 			// if the above already has a child  - replace it with this (or the bottom of this' chain )
 			var bottomChild = this ;			
-			while( bottomChild.following ) bottomChild = bottomChild.following ; 
+			while( bottomChild.child ) bottomChild = bottomChild.child ; 
 			currentChild.insertAfter( bottomChild ) ;
 		}
-		if( this.parent && above && above.start ) {  // if a start block is replacing existing parent...
+		if( this.parent && above && above.start ) { // if a start block is replacing existing parent...
 													// we won't join properly so move 
 													// the above blocks out of the way
 			var up = this.parent ;
@@ -168,26 +171,27 @@ function CodeBlock( args ) {
 
 
 	this.setParent = function( p ) {
-		if( !this.start ) { 
+		if( !this.start ) {
+
 			// if already have a parent - make sure parent doesn't think 
 			// I'm still part of the chain
 			if( this.parent ) {
-				this.parent.following = null ;
+				this.parent.child = null ;
 				var up = this.parent ;
 				while( up.parent ) up = up.parent ;
 				up.calcHeight() ;
 			}
 
 			// if parent has something else in the chain (that I am replacing)...
-			if( p ) {
-				if( p.following ) {
-					p.following.parent = this ;
+			if( p ) {				
+				if( p.child ) {
+					p.child.parent = this ;
 				}
 				if( !p.end ) {
-					p.following = this ;  // other part of main code
+					p.child = this ;  // other part of main code
 					this.parent = p ;
 				} else {
-					p.following = null ;
+					p.child = null ;
 					this.parent = null ;
 					this.y = p.y+p.height+15 ;
 					this.x += 15 ;
@@ -198,6 +202,41 @@ function CodeBlock( args ) {
 		}
 	} ;
 
+	
+	this.setParent2 = function( p ) {
+
+		if( !this.start ) { 
+			
+			// if already have a parent - make sure parent doesn't think 
+			// I'm still part of the chain
+			if( this.parent2 ) {
+				this.parent2.child2 = null ;
+				var up = this.parent2 ;		// get immediate nested parent
+				while( up.parent ) up = up.parent ;  // then all of its parents
+				up.calcHeight() ;			// calc the total height
+			}
+
+			// if parent has something else in the chain (that I am replacing)...
+			if( p ) {				
+				if( p.child2 ) {
+					p.child2.parent = this ;
+				}
+				if( !p.end ) {
+					p.child2 = this ;  // other part of main code
+					this.parent2 = p ;
+				} else {
+					p.child2 = null ;
+					this.parent2 = null ;
+					this.y = p.y+p.height+15 ;
+					this.x += 15 ;
+				}
+			} else {
+				this.parent2 = p ;	// Always set a null parent
+			}
+		}
+	} ;
+
+	
 	this.draw = function ( ctx ) {
 		var poly;
 		if( !this.nested ) {
@@ -229,16 +268,16 @@ function CodeBlock( args ) {
 		ctx.closePath();
 		ctx.fill();
 		ctx.stroke();
-		if( this.following ) {
-			this.following.x = this.x;
-			this.following.y = this.y + this.height -5 ;
-			this.following.draw(ctx);
+		if( this.child ) {
+			this.child.x = this.x;
+			this.child.y = this.y + this.height -5 ;
+			this.child.draw(ctx);
 		}
 
-		if( this.child ) {
-			this.child.x = this.x + 50 ;
-			this.child.y = this.y + 40 -5 ;
-			this.child.draw(ctx);
+		if( this.child2 ) {
+			this.child2.x = this.x + 50 ;
+			this.child2.y = this.y + 40 -5 ;
+			this.child2.draw(ctx);
 		}
 
 

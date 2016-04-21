@@ -50,6 +50,7 @@ function openMenu( codeBlock, x, y ) {
 			closeMenu() ;
 		}
 	} ;
+	nameInput.select() ;
 	nameInput.focus() ;
 	menu.style.left = x+ "px" ;
 	menu.style.top = y+ "px" ;
